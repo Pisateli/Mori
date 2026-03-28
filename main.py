@@ -1,13 +1,24 @@
+import os
 import subprocess
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from starlette.background import BackgroundTask
 
-subprocess.Popen(["./Mori"])
+try:
+    os.chmod("./Mori", 0o755)
+    subprocess.Popen(["./Mori"])
+    print("SUCCESS: ./Mori is running in the background!")
+except Exception as e:
+    print(f"FATAL ERROR: Failed to run ./Mori! Reason: {e}")
 
 app = FastAPI()
 client = httpx.AsyncClient(base_url="http://localhost:3000")
+
+
+@app.get("/health")
+def healthcheck():
+    return {"status": "ok"}
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy_to_rust(request: Request, path: str):
