@@ -1,6 +1,5 @@
 [cerebrium.deployment]
-name = "5-dockerfile"
-python_version = "3.12"
+name = "mori"
 include = ["./*"]
 exclude = [".*"]
 shell_commands = [""]
