@@ -14,7 +14,7 @@ region = "us-east-1"
 
 [cerebrium.runtime.custom]
 port = 3000
-healthcheck_endpoint = "/bot"
+healthcheck_endpoint = "/health"
 dockerfile_path = "./Dockerfile"
 
 [cerebrium.scaling]
