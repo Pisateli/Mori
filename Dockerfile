@@ -41,6 +41,10 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+
+RUN apt-get install -y python3 python3-pip
+RUN pip3 install fastapi uvicorn httpx --break-system-packages
+
 WORKDIR /app
 
 COPY --from=builder /app/target/release/Mori ./Mori
