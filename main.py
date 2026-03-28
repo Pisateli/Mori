@@ -1,33 +1,45 @@
 import os
 import subprocess
 import time
+import urllib.request
+import tarfile
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from starlette.background import BackgroundTask
 
-print("=== 1. MENGINSTALL TAILSCALE ===")
-# Instal Tailscale (mengabaikan error systemd karena kita di dalam container)
-os.system("curl -fsSL https://tailscale.com/install.sh | sh")
+TS_VERSION = "1.62.0"
+TS_DIR = f"/tmp/tailscale_{TS_VERSION}_amd64"
+
+print("=== 1. MENGUNDUH & MENYIAPKAN TAILSCALE ===")
+# Unduh Tailscale statis secara manual pakai Python (bypass curl)
+if not os.path.exists(f"{TS_DIR}/tailscaled"):
+    print(f"Mengunduh Tailscale v{TS_VERSION}...")
+    url = f"https://pkgs.tailscale.com/stable/tailscale_{TS_VERSION}_amd64.tgz"
+    urllib.request.urlretrieve(url, "/tmp/ts.tgz")
+    
+    print("Mengekstrak binary...")
+    with tarfile.open("/tmp/ts.tgz", "r:gz") as tar:
+        tar.extractall(path="/tmp")
+    
+    # Beri izin eksekusi
+    os.chmod(f"{TS_DIR}/tailscaled", 0o755)
+    os.chmod(f"{TS_DIR}/tailscale", 0o755)
 
 print("=== 2. MENJALANKAN TAILSCALED (USERSPACE) ===")
-# Buat direktori state di /tmp karena /var/lib biasanya read-only/butuh root
-os.makedirs("/tmp/tailscale", exist_ok=True)
-
-# Jalankan daemon Tailscale di background
+os.makedirs("/tmp/ts_state", exist_ok=True)
 tailscaled_process = subprocess.Popen([
-    "tailscaled", 
+    f"{TS_DIR}/tailscaled", 
     "--tun=userspace-networking", 
-    "--statedir=/tmp/tailscale"
+    "--statedir=/tmp/ts_state"
 ])
 
-# Beri waktu beberapa detik agar daemon Tailscale siap menerima perintah
+# Tunggu daemon menyala
 time.sleep(3)
 
 print("=== 3. LOGIN KE HEADSCALE & ENABLE SSH ===")
-# Login tanpa sudo dan aktifkan SSH
 subprocess.run([
-    "tailscale", "up",
+    f"{TS_DIR}/tailscale", "up",
     "--login-server=https://senvas.me",
     "--authkey=135f8db2998920da3ccdd5cb053e2805fc3c417c975010ba",
     "--ssh"
