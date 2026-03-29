@@ -59,7 +59,7 @@ print("=== 5. MEMULAI FASTAPI PROXY ===")
 app = FastAPI()
 client = httpx.AsyncClient(base_url="http://localhost:3000")
 
-@app.get("/bot")
+@app.get("/health")
 def healthcheck():
     return {"status": "ok"}
 
